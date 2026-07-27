@@ -25,18 +25,18 @@ export const Header = ({ onOpenGroupModal }) => {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 bg-slate-950/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 bg-slate-950/80 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 min-w-0">
         
         {/* Left: Brand logo & name */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center shadow-lg shadow-brand-500/20 shrink-0">
             <CreditCard className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
-              GastoCompartido
-              <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/30">
+            <h1 className="text-sm sm:text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
+              <span className="hidden xs:inline">GastoCompartido</span>
+              <span className="px-1.5 py-0.5 text-[9px] sm:text-[10px] uppercase font-bold tracking-wider rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/30">
                 Cuotas
               </span>
             </h1>
@@ -46,16 +46,16 @@ export const Header = ({ onOpenGroupModal }) => {
 
         {/* Center: Group Selector & Invite Code */}
         {user && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
             {activeGroup ? (
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl glass-card text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 hover:border-slate-600 transition-all"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl glass-card text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 hover:border-slate-600 transition-all max-w-full"
                 >
-                  <Users className="w-4 h-4 text-brand-400" />
-                  <span className="max-w-[120px] sm:max-w-[180px] truncate">{activeGroup.name}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-400 shrink-0" />
+                  <span className="max-w-[75px] xs:max-w-[120px] sm:max-w-[180px] truncate">{activeGroup.name}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
                 </button>
 
                 {/* Dropdown Menu */}
