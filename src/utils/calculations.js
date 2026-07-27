@@ -137,3 +137,71 @@ export const calculateMonthlySummary = ({
     statusKey
   }
 }
+
+/**
+ * Calculate per-expense settlement status based on chronological settlements
+ * Returns a map of expenseId -> { isSettled: boolean, coveredAmount: number, pendingAmount: number }
+ */
+export const calculateExpenseSettlementStatuses = ({
+  expenses = [],
+  settlements = [],
+  members = []
+}) => {
+  const memberCount = Math.max(members.length, 2)
+  const statusMap = {}
+
+  // Sort expenses by date ascending (oldest first)
+  const sortedExpenses = [...expenses].sort((a, b) => {
+    return new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
+  })
+
+  // Track available settlement credits between member pairs
+  const creditPool = {}
+
+  settlements.forEach(s => {
+    const key = `${s.payer_id}_to_${s.receiver_id}`
+    creditPool[key] = (creditPool[key] || 0) + (Number(s.amount) || 0)
+  })
+
+  // Iterate over expenses chronologically and apply settlement credits
+  sortedExpenses.forEach(exp => {
+    const share = (Number(exp.amount) || 0) / memberCount
+    const payerId = exp.paid_by
+
+    // Find non-payer members
+    const nonPayers = members.filter(m => m.id !== payerId)
+    let totalCoveredForExpense = 0
+
+    nonPayers.forEach(nonPayer => {
+      const key = `${nonPayer.id}_to_${payerId}`
+      const available = creditPool[key] || 0
+
+      if (available >= share) {
+        creditPool[key] = available - share
+        totalCoveredForExpense += share
+      } else if (available > 0) {
+        totalCoveredForExpense += available
+        creditPool[key] = 0
+      }
+    })
+
+    // If nonPayers is empty, check any settlement transferred to payerId
+    if (nonPayers.length === 0) {
+      const matchKey = Object.keys(creditPool).find(k => k.endsWith(`_to_${payerId}`))
+      if (matchKey && creditPool[matchKey] >= share) {
+        creditPool[matchKey] -= share
+        totalCoveredForExpense += share
+      }
+    }
+
+    const isSettled = totalCoveredForExpense >= share - 0.01
+
+    statusMap[exp.id] = {
+      isSettled,
+      coveredAmount: Math.min(share, totalCoveredForExpense),
+      pendingAmount: Math.max(0, share - totalCoveredForExpense)
+    }
+  })
+
+  return statusMap
+}

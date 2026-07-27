@@ -272,6 +272,7 @@ export function App() {
             {/* Direct One-Off Expenses Section */}
             <DirectExpensesList
               expenses={expenses}
+              settlements={settlements}
               members={groupMembers}
               currentUserId={user.id}
               summary={summary}

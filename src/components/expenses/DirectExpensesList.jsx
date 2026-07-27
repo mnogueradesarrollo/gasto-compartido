@@ -1,12 +1,13 @@
 import React from 'react'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
+import { calculateExpenseSettlementStatuses } from '../../utils/calculations'
 import { Receipt, Plus, Trash2, Edit2, ShoppingCart, Tag, User, ArrowUpRight, ArrowDownRight, CheckCircle2 } from 'lucide-react'
 
 export const DirectExpensesList = ({
   expenses = [],
+  settlements = [],
   members = [],
   currentUserId,
-  summary = {},
   onOpenNewExpenseModal,
   onEditExpense,
   onDeleteExpense
@@ -14,8 +15,12 @@ export const DirectExpensesList = ({
   // Always divide by at least 2 for couple/family 50/50 calculations
   const memberCount = Math.max(members.length, 2)
 
-  const { directExpenseNet = 0, settlementNet = 0 } = summary
-  const totalNetBalance = directExpenseNet + settlementNet
+  // Compute exact settlement status for each expense chronologically
+  const settlementStatuses = calculateExpenseSettlementStatuses({
+    expenses,
+    settlements,
+    members
+  })
 
   return (
     <div className="glass-panel p-6 rounded-3xl border border-slate-800 mb-8">
@@ -53,8 +58,8 @@ export const DirectExpensesList = ({
             const amount = Number(expense.amount) || 0
             const sharePerMember = amount / memberCount
 
-            // An expense is considered settled if total net balance is 0 or positive for current user
-            const isSettled = !isPayerCurrentUser ? totalNetBalance >= 0 : totalNetBalance >= sharePerMember
+            const settlementInfo = settlementStatuses[expense.id] || { isSettled: false }
+            const isSettled = settlementInfo.isSettled
 
             return (
               <div
@@ -145,7 +150,7 @@ export const DirectExpensesList = ({
                         {isPayerCurrentUser ? 'Te deben transferir (50%):' : 'Debes transferir (50%):'}
                       </span>
                       <span className={`font-bold flex items-center gap-1 ${
-                        isPayerCurrentUser ? 'text-emerald-400' : 'text-rose-400'
+                        isPayerCurrentUser ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-bold'
                       }`}>
                         {isPayerCurrentUser ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                         {formatCurrency(sharePerMember)}
