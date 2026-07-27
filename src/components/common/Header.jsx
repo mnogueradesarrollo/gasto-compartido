@@ -102,14 +102,14 @@ export const Header = ({ onOpenGroupModal }) => {
               </button>
             )}
 
-            {/* Invite Code Badge */}
+            {/* Invite Code Badge (Responsive) */}
             {activeGroup?.invite_code && (
               <button
                 onClick={copyInviteCode}
                 title="Copiar código de invitación para compartir con tu pareja/familia"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-mono transition-all"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-slate-300 text-[11px] sm:text-xs font-mono transition-all"
               >
-                <span className="text-slate-500 text-[10px] font-sans uppercase font-bold">CÓDIGO:</span>
+                <span className="text-slate-500 text-[9px] sm:text-[10px] font-sans uppercase font-bold hidden xs:inline">CÓDIGO:</span>
                 <span className="font-bold text-brand-300">{activeGroup.invite_code}</span>
                 {copied ? (
                   <Check className="w-3.5 h-3.5 text-emerald-400" />

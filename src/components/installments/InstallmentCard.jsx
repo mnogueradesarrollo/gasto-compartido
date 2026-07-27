@@ -148,14 +148,14 @@ export const InstallmentCard = ({
               return (
                 <div
                   key={inst.id}
-                  className={`p-3 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+                  className={`p-3 rounded-2xl border flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 transition-all ${
                     inst.is_paid
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                       : 'bg-slate-900/60 border-slate-800 text-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 font-bold text-xs flex items-center justify-center text-slate-300">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 font-bold text-xs flex items-center justify-center text-slate-300 shrink-0">
                       {getInitials(assignedUser.full_name)}
                     </div>
                     <div>
@@ -174,7 +174,7 @@ export const InstallmentCard = ({
                   <button
                     onClick={() => handleCheckPayment(inst)}
                     disabled={loadingInstId === inst.id}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold transition-all w-full xs:w-auto ${
                       inst.is_paid
                         ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-600/30'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
