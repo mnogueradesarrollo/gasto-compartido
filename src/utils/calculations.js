@@ -4,16 +4,17 @@
  */
 export const generateInstallmentDates = (startDateStr, count) => {
   const dates = []
-  const start = new Date(startDateStr)
-  const initialDay = start.getDate()
+  // Parse YYYY-MM-DD safely without timezone shifts
+  const parts = startDateStr.split('-')
+  const startYear = parseInt(parts[0], 10)
+  const startMonth = parseInt(parts[1], 10) - 1
+  const startDay = parseInt(parts[2], 10)
 
   for (let i = 0; i < count; i++) {
-    const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
-    // Handle variable month lengths (e.g. Feb 28/29)
+    const d = new Date(startYear, startMonth + i, 1)
     const maxDays = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
-    d.setDate(Math.min(initialDay, maxDays))
+    d.setDate(Math.min(startDay, maxDays))
     
-    // Format YYYY-MM-DD
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
@@ -24,10 +25,19 @@ export const generateInstallmentDates = (startDateStr, count) => {
 }
 
 /**
- * Filter installments for a specific target month (YYYY-MM)
+ * Filter items for a specific target month (YYYY-MM) safely without timezone shifts
  */
 export const isSameMonthAndYear = (dateStr, targetDate = new Date()) => {
   if (!dateStr) return false
+  
+  const str = String(dateStr).trim()
+  if (/^\d{4}-\d{2}/.test(str)) {
+    const parts = str.split('T')[0].split('-')
+    const year = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10) - 1
+    return targetDate.getFullYear() === year && targetDate.getMonth() === month
+  }
+
   const date = new Date(dateStr)
   return (
     date.getFullYear() === targetDate.getFullYear() &&
@@ -72,17 +82,19 @@ export const calculateMonthlySummary = ({
 
   const memberCount = Math.max(members.length, 1)
 
-  // Direct expenses paid by user
-  const paidByUser = monthlyExpenses
+  // Total direct expenses in group this month
+  const totalDirectExpenses = monthlyExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
+
+  // Direct expenses paid 100% out of pocket by current user
+  const paidByUserDirect = monthlyExpenses
     .filter(exp => exp.paid_by === currentUserId)
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
 
-  // Fair share of all direct expenses for user
-  const totalDirectExpenses = monthlyExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
+  // Fair share of direct expenses per member (50% if 2 members)
   const userFairShareExpenses = totalDirectExpenses / memberCount
 
-  // Net balance from direct expenses (positive = user spent more than share, owed money; negative = user owes)
-  const directExpenseNet = paidByUser - userFairShareExpenses
+  // Net balance from direct expenses (positive = user spent more than share, partner owes user; negative = user owes partner)
+  const directExpenseNet = paidByUserDirect - userFairShareExpenses
 
   // 3. Settlements calculation
   const totalSettlementsPaid = settlements
@@ -112,9 +124,12 @@ export const calculateMonthlySummary = ({
     totalInstallmentAmount,
     paidInstallmentAmount,
     pendingInstallmentAmount,
-    paidByUserDirect: paidByUser,
+    totalDirectExpenses,
+    paidByUserDirect,
     userFairShareExpenses,
     directExpenseNet,
+    totalSettlementsPaid,
+    totalSettlementsReceived,
     settlementNet,
     totalDueThisMonth,
     totalPaidThisMonth,

@@ -2,21 +2,27 @@ import React from 'react'
 import { StatCard } from '../common/StatCard'
 import { StatusBadge } from '../common/StatusBadge'
 import { formatCurrency, getCurrentMonthLabel } from '../../utils/formatters'
-import { Calendar, CreditCard, CheckCircle2, Clock, DollarSign, PieChart } from 'lucide-react'
+import { Calendar, CreditCard, CheckCircle2, Clock, Receipt, HandCoins, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
-export const MonthlySummary = ({ summary, userName }) => {
+export const MonthlySummary = ({ summary = {}, userName }) => {
   const {
     totalInstallmentAmount = 0,
     paidInstallmentAmount = 0,
     pendingInstallmentAmount = 0,
-    totalDueThisMonth = 0,
-    totalPaidThisMonth = 0,
+    totalDirectExpenses = 0,
+    paidByUserDirect = 0,
+    userFairShareExpenses = 0,
+    directExpenseNet = 0,
+    settlementNet = 0,
     statusKey = 'up_to_date'
-  } = summary || {}
+  } = summary
 
-  const progressPercent = totalInstallmentAmount > 0 
+  const installmentProgress = totalInstallmentAmount > 0 
     ? Math.min(100, Math.round((paidInstallmentAmount / totalInstallmentAmount) * 100))
     : 100
+
+  // Total balance combining direct expenses and past settlements
+  const totalNetBalance = directExpenseNet + settlementNet
 
   return (
     <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800/80 shadow-2xl relative overflow-hidden mb-8">
@@ -31,7 +37,7 @@ export const MonthlySummary = ({ summary, userName }) => {
             <span className="capitalize">{getCurrentMonthLabel()}</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Resumen Mensual de {userName}
+            Resumen General de {userName}
           </h2>
         </div>
         <div>
@@ -43,44 +49,54 @@ export const MonthlySummary = ({ summary, userName }) => {
       <div className="my-6">
         <div className="flex justify-between items-center text-xs font-semibold mb-2">
           <span className="text-slate-300 flex items-center gap-1.5">
-            <PieChart className="w-3.5 h-3.5 text-brand-400" />
+            <CreditCard className="w-4 h-4 text-brand-400" />
             Progreso de Cuotas del Mes
           </span>
-          <span className="text-brand-300 font-bold">{progressPercent}% completado</span>
+          <span className="text-brand-300 font-bold">{installmentProgress}% completado</span>
         </div>
         <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
           <div
             className="h-full bg-gradient-to-r from-brand-500 to-accent-500 rounded-full transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
+            style={{ width: `${installmentProgress}%` }}
           ></div>
         </div>
       </div>
 
-      {/* Metric Stat Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Metric Stat Cards Grid: Section 1 (Compras en Cuotas) & Section 2 (Gastos Directos) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
         <StatCard
-          title="Total Cuotas del Mes"
+          title="Cuotas del Mes"
           value={formatCurrency(totalInstallmentAmount)}
-          subtitle="Tus vencimientos de compras en cuotas"
+          subtitle="Tus vencimientos de compras financiadas"
           icon={CreditCard}
           color="brand"
         />
 
         <StatCard
-          title="Ya Pagado / Confirmado"
+          title="Cuotas Pagadas"
           value={formatCurrency(paidInstallmentAmount)}
-          subtitle="Cuotas confirmadas como abonadas"
+          subtitle={`Falta abonar ${formatCurrency(pendingInstallmentAmount)}`}
           icon={CheckCircle2}
           color="emerald"
         />
 
         <StatCard
-          title="Pendiente de Pago"
-          value={formatCurrency(pendingInstallmentAmount)}
-          subtitle="Falta confirmar o transferir este mes"
-          icon={Clock}
-          color={pendingInstallmentAmount > 0 ? "amber" : "emerald"}
+          title="Gastos Directos (Total)"
+          value={formatCurrency(totalDirectExpenses)}
+          subtitle={`Pagaste el 100%: ${formatCurrency(paidByUserDirect)}`}
+          icon={Receipt}
+          color="amber"
         />
+
+        <StatCard
+          title="Saldo a Cobrar / Pagar"
+          value={totalNetBalance >= 0 ? `+ ${formatCurrency(totalNetBalance)}` : `- ${formatCurrency(Math.abs(totalNetBalance))}`}
+          subtitle={totalNetBalance >= 0 ? 'Tu pareja debe transferirte esta parte' : 'Debes transferir a tu pareja'}
+          icon={totalNetBalance >= 0 ? ArrowUpRight : ArrowDownRight}
+          color={totalNetBalance >= 0 ? "emerald" : "rose"}
+        />
+
       </div>
     </div>
   )
