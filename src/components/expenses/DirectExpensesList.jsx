@@ -1,17 +1,21 @@
 import React from 'react'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
-import { Receipt, Plus, Trash2, Edit2, ShoppingCart, Tag, User, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Receipt, Plus, Trash2, Edit2, ShoppingCart, Tag, User, ArrowUpRight, ArrowDownRight, CheckCircle2 } from 'lucide-react'
 
 export const DirectExpensesList = ({
   expenses = [],
   members = [],
   currentUserId,
+  summary = {},
   onOpenNewExpenseModal,
   onEditExpense,
   onDeleteExpense
 }) => {
   // Always divide by at least 2 for couple/family 50/50 calculations
   const memberCount = Math.max(members.length, 2)
+
+  const { directExpenseNet = 0, settlementNet = 0 } = summary
+  const totalNetBalance = directExpenseNet + settlementNet
 
   return (
     <div className="glass-panel p-6 rounded-3xl border border-slate-800 mb-8">
@@ -48,6 +52,9 @@ export const DirectExpensesList = ({
             const isPayerCurrentUser = expense.paid_by === currentUserId
             const amount = Number(expense.amount) || 0
             const sharePerMember = amount / memberCount
+
+            // An expense is considered settled if total net balance is 0 or positive for current user
+            const isSettled = !isPayerCurrentUser ? totalNetBalance >= 0 : totalNetBalance >= sharePerMember
 
             return (
               <div
@@ -122,17 +129,29 @@ export const DirectExpensesList = ({
                     <span className="font-bold text-slate-200">{formatCurrency(sharePerMember)}</span>
                   </div>
 
-                  <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                    <span className="text-slate-400">
-                      {isPayerCurrentUser ? 'Te deben transferir (50%):' : 'Debes transferir (50%):'}
-                    </span>
-                    <span className={`font-bold flex items-center gap-1 ${
-                      isPayerCurrentUser ? 'text-emerald-400' : 'text-rose-400'
-                    }`}>
-                      {isPayerCurrentUser ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                      {formatCurrency(sharePerMember)}
-                    </span>
-                  </div>
+                  {isSettled ? (
+                    <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                      <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        {isPayerCurrentUser ? 'Transferencia acreditada' : 'Saldado / Transferido'}
+                      </span>
+                      <span className="font-extrabold text-emerald-400">
+                        {formatCurrency(sharePerMember)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                      <span className="text-slate-400">
+                        {isPayerCurrentUser ? 'Te deben transferir (50%):' : 'Debes transferir (50%):'}
+                      </span>
+                      <span className={`font-bold flex items-center gap-1 ${
+                        isPayerCurrentUser ? 'text-emerald-400' : 'text-rose-400'
+                      }`}>
+                        {isPayerCurrentUser ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                        {formatCurrency(sharePerMember)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
               </div>

@@ -240,6 +240,11 @@ export function App() {
             <MonthlySummary
               summary={summary}
               userName={profile?.full_name || 'Usuario'}
+              currentUserId={user.id}
+              activeGroupId={activeGroup.id}
+              members={groupMembers}
+              installments={installments}
+              onSummaryUpdated={fetchGroupData}
             />
 
             {/* Member Debt & Settlement Balance Overview */}
@@ -269,6 +274,7 @@ export function App() {
               expenses={expenses}
               members={groupMembers}
               currentUserId={user.id}
+              summary={summary}
               onOpenNewExpenseModal={() => setIsNewExpenseModalOpen(true)}
               onEditExpense={(expense) => setEditingExpense(expense)}
               onDeleteExpense={handleDeleteExpense}
