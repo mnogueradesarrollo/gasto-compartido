@@ -8,7 +8,9 @@ export const ActiveInstallmentsList = ({
   members = [],
   currentUserId,
   onOpenNewModal,
-  onTogglePayment
+  onTogglePayment,
+  onEditPlan,
+  onInstallmentUpdated
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -80,6 +82,8 @@ export const ActiveInstallmentsList = ({
               members={members}
               currentUserId={currentUserId}
               onTogglePayment={onTogglePayment}
+              onEditPlan={onEditPlan}
+              onInstallmentUpdated={onInstallmentUpdated}
             />
           ))}
         </div>

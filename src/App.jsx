@@ -9,6 +9,7 @@ import { BalanceOverview } from './components/dashboard/BalanceOverview'
 import { ActiveInstallmentsList } from './components/dashboard/ActiveInstallmentsList'
 import { DirectExpensesList } from './components/expenses/DirectExpensesList'
 import { NewInstallmentModal } from './components/installments/NewInstallmentModal'
+import { EditInstallmentModal } from './components/installments/EditInstallmentModal'
 import { NewExpenseModal } from './components/expenses/NewExpenseModal'
 import { SettlementModal } from './components/settlements/SettlementModal'
 import { SettlementHistory } from './components/settlements/SettlementHistory'
@@ -28,6 +29,7 @@ export function App() {
   // Modal States
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
   const [isNewInstallmentModalOpen, setIsNewInstallmentModalOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState(null)
   const [isNewExpenseModalOpen, setIsNewExpenseModalOpen] = useState(false)
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false)
 
@@ -254,6 +256,8 @@ export function App() {
               currentUserId={user.id}
               onOpenNewModal={() => setIsNewInstallmentModalOpen(true)}
               onTogglePayment={handleTogglePayment}
+              onEditPlan={(plan) => setEditingPlan(plan)}
+              onInstallmentUpdated={fetchGroupData}
             />
 
             {/* Direct One-Off Expenses Section */}
@@ -290,6 +294,15 @@ export function App() {
             members={groupMembers}
             currentUserId={user.id}
             onPlanCreated={fetchGroupData}
+          />
+
+          <EditInstallmentModal
+            isOpen={!!editingPlan}
+            onClose={() => setEditingPlan(null)}
+            plan={editingPlan}
+            installments={installments}
+            onPlanUpdated={fetchGroupData}
+            onPlanDeleted={fetchGroupData}
           />
 
           <NewExpenseModal

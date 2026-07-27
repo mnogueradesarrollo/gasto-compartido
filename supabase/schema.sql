@@ -226,6 +226,14 @@ CREATE POLICY "Group members can insert installment plans"
     ON public.installment_plans FOR INSERT TO authenticated 
     WITH CHECK (public.is_group_member(group_id));
 
+CREATE POLICY "Group members can update installment plans" 
+    ON public.installment_plans FOR UPDATE TO authenticated 
+    USING (public.is_group_member(group_id));
+
+CREATE POLICY "Group members can delete installment plans" 
+    ON public.installment_plans FOR DELETE TO authenticated 
+    USING (public.is_group_member(group_id));
+
 CREATE POLICY "Group members can view installments" 
     ON public.installments FOR SELECT TO authenticated 
     USING (public.is_group_member(group_id));
@@ -236,6 +244,10 @@ CREATE POLICY "Group members can insert installments"
 
 CREATE POLICY "Group members can update installments" 
     ON public.installments FOR UPDATE TO authenticated 
+    USING (public.is_group_member(group_id));
+
+CREATE POLICY "Group members can delete installments" 
+    ON public.installments FOR DELETE TO authenticated 
     USING (public.is_group_member(group_id));
 
 CREATE POLICY "Group members can view expenses" 

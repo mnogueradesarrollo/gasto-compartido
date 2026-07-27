@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
-import { CreditCard, Check, Clock, Calendar, User, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
+import { CreditCard, Check, Clock, Calendar, User, ChevronDown, ChevronUp, Edit2 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 
 export const InstallmentCard = ({
@@ -8,10 +9,14 @@ export const InstallmentCard = ({
   installments = [],
   members = [],
   currentUserId,
-  onTogglePayment
+  onTogglePayment,
+  onEditPlan,
+  onInstallmentUpdated
 }) => {
   const [expanded, setExpanded] = useState(false)
   const [loadingInstId, setLoadingInstId] = useState(null)
+  const [editingInstId, setEditingInstId] = useState(null)
+  const [tempDueDate, setTempDueDate] = useState('')
 
   // Plan info
   const { title, total_amount, total_installments, start_date, buyer_id } = plan
@@ -32,7 +37,7 @@ export const InstallmentCard = ({
   const paidDuesCount = planInstallments.filter(inst => inst.is_paid).length
   const progressPercent = totalDuesCount > 0 ? Math.round((paidDuesCount / totalDuesCount) * 100) : 0
 
-  // Calculate current installment number display (e.g. "Cuota 2 de 6")
+  // Calculate current installment number display
   const latestDue = currentMonthDues[0] || planInstallments[0]
   const currentNumber = latestDue ? latestDue.installment_number : 1
 
@@ -42,7 +47,6 @@ export const InstallmentCard = ({
       const newStatus = !installment.is_paid
       await onTogglePayment(installment.id, newStatus)
       if (newStatus) {
-        // Trigger celebratory confetti effect
         confetti({
           particleCount: 50,
           spread: 60,
@@ -53,6 +57,23 @@ export const InstallmentCard = ({
       console.error('Error updating payment:', err)
     } finally {
       setLoadingInstId(null)
+    }
+  }
+
+  const handleSaveIndividualDueDate = async (installmentId) => {
+    if (!tempDueDate) return
+    try {
+      const { error } = await supabase
+        .from('installments')
+        .update({ due_date: tempDueDate })
+        .eq('id', installmentId)
+
+      if (error) throw error
+
+      setEditingInstId(null)
+      if (onInstallmentUpdated) onInstallmentUpdated()
+    } catch (err) {
+      console.error('Error updating installment due date:', err)
     }
   }
 
@@ -71,6 +92,13 @@ export const InstallmentCard = ({
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-brand-500/20 text-brand-300 border border-brand-500/30">
                 {total_installments} cuotas
               </span>
+              <button
+                onClick={() => onEditPlan(plan)}
+                className="p-1 text-slate-400 hover:text-brand-300 hover:bg-slate-800 rounded-lg transition-colors ml-1"
+                title="Editar plan o fechas de vencimiento"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
             </div>
             <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-slate-500" />
@@ -179,30 +207,71 @@ export const InstallmentCard = ({
           onClick={() => setExpanded(!expanded)}
           className="inline-flex items-center gap-1 text-xs font-semibold text-brand-400 hover:text-brand-300 transition-colors"
         >
-          <span>{expanded ? 'Ocultar historial completo de cuotas' : 'Ver todas las cuotas'}</span>
+          <span>{expanded ? 'Ocultar historial completo de cuotas' : 'Ver todas las cuotas y editar fechas'}</span>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Expanded Dues History */}
+      {/* Expanded Dues History with date editing */}
       {expanded && (
         <div className="mt-4 pt-4 border-t border-slate-800/80 animate-fade-in">
-          <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
             {planInstallments.map((inst) => {
               const user = members.find(m => m.id === inst.assigned_to) || { full_name: 'Miembro' }
+              const isEditingThis = editingInstId === inst.id
+
               return (
                 <div
                   key={inst.id}
-                  className="p-2.5 rounded-xl bg-slate-950/40 border border-slate-800 flex items-center justify-between text-xs"
+                  className="p-2.5 rounded-xl bg-slate-950/40 border border-slate-800 flex items-center justify-between text-xs gap-2"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-slate-300">Cuota {inst.installment_number}/{inst.total_installments}</span>
                     <span className="text-slate-500">•</span>
-                    <span className="text-slate-400">{formatDate(inst.due_date)}</span>
+                    
+                    {isEditingThis ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="date"
+                          value={tempDueDate}
+                          onChange={(e) => setTempDueDate(e.target.value)}
+                          className="px-2 py-0.5 rounded bg-slate-900 text-slate-100 text-xs border border-slate-700"
+                        />
+                        <button
+                          onClick={() => handleSaveIndividualDueDate(inst.id)}
+                          className="px-2 py-0.5 rounded bg-brand-600 text-white font-bold text-[10px]"
+                        >
+                          OK
+                        </button>
+                        <button
+                          onClick={() => setEditingInstId(null)}
+                          className="px-1.5 py-0.5 text-slate-400 text-[10px]"
+                        >
+                          X
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-500" />
+                        {formatDate(inst.due_date)}
+                        <button
+                          onClick={() => {
+                            setEditingInstId(inst.id)
+                            setTempDueDate(inst.due_date)
+                          }}
+                          className="p-0.5 text-slate-500 hover:text-slate-200 rounded"
+                          title="Modificar fecha de vencimiento de esta cuota"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                      </span>
+                    )}
+
                     <span className="text-slate-500">•</span>
                     <span className="text-slate-300 font-medium">{user.full_name}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+
+                  <div className="flex items-center gap-3 shrink-0">
                     <span className="font-semibold text-slate-200">{formatCurrency(inst.amount_per_member)}</span>
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
