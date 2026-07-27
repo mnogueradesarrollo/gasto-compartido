@@ -256,6 +256,8 @@ export function App() {
               installments={installments}
               members={groupMembers}
               currentUserId={user.id}
+              activeGroupId={activeGroup.id}
+              summary={summary}
               onOpenNewModal={() => setIsNewInstallmentModalOpen(true)}
               onTogglePayment={handleTogglePayment}
               onEditPlan={(plan) => setEditingPlan(plan)}

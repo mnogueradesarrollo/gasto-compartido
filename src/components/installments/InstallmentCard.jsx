@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
 import { supabase } from '../../lib/supabase'
-import { CreditCard, Check, Clock, Calendar, User, ChevronDown, ChevronUp, Edit2 } from 'lucide-react'
+import { CreditCard, Check, Clock, Calendar, User, ChevronDown, ChevronUp, Edit2, Sparkles, CheckCheck } from 'lucide-react'
 import confetti from 'canvas-confetti'
 
 export const InstallmentCard = ({
@@ -24,6 +24,7 @@ export const InstallmentCard = ({
 
   // Filter installments belonging to this plan
   const planInstallments = installments.filter(inst => inst.plan_id === plan.id)
+  const pendingPlanInstallments = planInstallments.filter(inst => !inst.is_paid)
 
   // Current month's dues for this plan
   const today = new Date()
@@ -55,6 +56,40 @@ export const InstallmentCard = ({
       }
     } catch (err) {
       console.error('Error updating payment:', err)
+    } finally {
+      setLoadingInstId(null)
+    }
+  }
+
+  // Pay off ALL remaining installments for this plan ahead of time
+  const handlePayOffWholePlan = async () => {
+    if (pendingPlanInstallments.length === 0) return
+
+    if (!window.confirm(`¿Quieres marcar TODAS las ${pendingPlanInstallments.length} cuotas restantes de "${title}" como pagadas y saldar la deuda por completo?`)) {
+      return
+    }
+
+    setLoadingInstId('ALL')
+    try {
+      const now = new Date().toISOString()
+      const idsToUpdate = pendingPlanInstallments.map(i => i.id)
+
+      const { error } = await supabase
+        .from('installments')
+        .update({ is_paid: true, paid_at: now })
+        .in('id', idsToUpdate)
+
+      if (error) throw error
+
+      confetti({
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.6 }
+      })
+
+      if (onInstallmentUpdated) onInstallmentUpdated()
+    } catch (err) {
+      console.error('Error paying off plan:', err)
     } finally {
       setLoadingInstId(null)
     }
@@ -107,11 +142,31 @@ export const InstallmentCard = ({
           </div>
         </div>
 
-        <div className="sm:text-right">
-          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Monto Total</span>
-          <span className="text-lg sm:text-xl font-extrabold text-slate-100">
-            {formatCurrency(total_amount)}
-          </span>
+        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-2">
+          <div className="sm:text-right">
+            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Monto Total</span>
+            <span className="text-lg sm:text-xl font-extrabold text-slate-100">
+              {formatCurrency(total_amount)}
+            </span>
+          </div>
+
+          {/* Quick Action: Pay Off Entire Plan */}
+          {pendingPlanInstallments.length > 0 ? (
+            <button
+              onClick={handlePayOffWholePlan}
+              disabled={loadingInstId === 'ALL'}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 transition-all"
+              title="Liquidar todas las cuotas restantes de este plan por adelantado"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>{loadingInstId === 'ALL' ? 'Saldando...' : 'Liquidar Plan Completo'}</span>
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-extrabold">
+              <CheckCheck className="w-4 h-4" />
+              Plan 100% Saldado
+            </span>
+          )}
         </div>
       </div>
 
@@ -173,7 +228,7 @@ export const InstallmentCard = ({
 
                   <button
                     onClick={() => handleCheckPayment(inst)}
-                    disabled={loadingInstId === inst.id}
+                    disabled={loadingInstId === inst.id || loadingInstId === 'ALL'}
                     className={`flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold transition-all w-full xs:w-auto ${
                       inst.is_paid
                         ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-600/30'
