@@ -1,15 +1,17 @@
 import React from 'react'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
-import { Receipt, Plus, Trash2, ShoppingCart, Tag, User, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Receipt, Plus, Trash2, Edit2, ShoppingCart, Tag, User, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
 export const DirectExpensesList = ({
   expenses = [],
   members = [],
   currentUserId,
   onOpenNewExpenseModal,
+  onEditExpense,
   onDeleteExpense
 }) => {
-  const memberCount = Math.max(members.length, 1)
+  // Always divide by at least 2 for couple/family 50/50 calculations
+  const memberCount = Math.max(members.length, 2)
 
   return (
     <div className="glass-panel p-6 rounded-3xl border border-slate-800 mb-8">
@@ -19,7 +21,7 @@ export const DirectExpensesList = ({
             <Receipt className="w-5 h-5 text-emerald-400" />
             Historial de Gastos Directos (Único Pago)
           </h3>
-          <p className="text-xs text-slate-400">Compras de 1 pago (supermercado, servicios) divididas automáticamente entre miembros</p>
+          <p className="text-xs text-slate-400">Compras de 1 pago (supermercado, servicios) divididas automáticamente al 50%</p>
         </div>
 
         <button
@@ -36,7 +38,7 @@ export const DirectExpensesList = ({
           <ShoppingCart className="w-10 h-10 text-slate-600 mx-auto mb-2" />
           <p className="text-sm font-semibold text-slate-300">No hay gastos directos registrados</p>
           <p className="text-xs text-slate-500 mt-0.5 max-w-md mx-auto">
-            Registra tus compras fijas o supermercado. Si tú pagas el 100%, el sistema calculará automáticamente la mitad que tu pareja te debe transferir.
+            Registra tus compras fijas o supermercado. Si tú pagas el 100%, el sistema calculará automáticamente la mitad (50%) que tu pareja te debe transferir.
           </p>
         </div>
       ) : (
@@ -60,7 +62,16 @@ export const DirectExpensesList = ({
                       {getInitials(payer.full_name)}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-slate-100">{expense.description}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-100">{expense.description}</h4>
+                        <button
+                          onClick={() => onEditExpense(expense)}
+                          className="p-1 text-slate-400 hover:text-emerald-300 hover:bg-slate-800 rounded-lg transition-colors"
+                          title="Editar este gasto directo"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                         <span className="text-slate-300 font-semibold flex items-center gap-1">
                           <User className="w-3 h-3 text-slate-500" />
@@ -77,14 +88,22 @@ export const DirectExpensesList = ({
                     </div>
                   </div>
 
-                  {/* Amounts & Delete button */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+                  {/* Amounts & Action buttons */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
                     <div className="text-left sm:text-right">
                       <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Monto Total</span>
                       <span className="text-base font-extrabold text-white">
                         {formatCurrency(amount)}
                       </span>
                     </div>
+
+                    <button
+                      onClick={() => onEditExpense(expense)}
+                      title="Editar gasto"
+                      className="p-1.5 text-slate-400 hover:text-emerald-300 hover:bg-slate-800 rounded-lg transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
 
                     <button
                       onClick={() => onDeleteExpense(expense.id)}
@@ -99,7 +118,7 @@ export const DirectExpensesList = ({
                 {/* 50/50 Split Breakdown Footer */}
                 <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                    <span className="text-slate-400">Tu parte ({Math.round(100/memberCount)}%):</span>
+                    <span className="text-slate-400">Tu cuota justa (50%):</span>
                     <span className="font-bold text-slate-200">{formatCurrency(sharePerMember)}</span>
                   </div>
 

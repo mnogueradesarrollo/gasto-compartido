@@ -11,6 +11,7 @@ import { DirectExpensesList } from './components/expenses/DirectExpensesList'
 import { NewInstallmentModal } from './components/installments/NewInstallmentModal'
 import { EditInstallmentModal } from './components/installments/EditInstallmentModal'
 import { NewExpenseModal } from './components/expenses/NewExpenseModal'
+import { EditExpenseModal } from './components/expenses/EditExpenseModal'
 import { SettlementModal } from './components/settlements/SettlementModal'
 import { SettlementHistory } from './components/settlements/SettlementHistory'
 import { calculateMonthlySummary } from './utils/calculations'
@@ -31,6 +32,7 @@ export function App() {
   const [isNewInstallmentModalOpen, setIsNewInstallmentModalOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState(null)
   const [isNewExpenseModalOpen, setIsNewExpenseModalOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState(null)
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false)
 
   // Fetch all group financial data
@@ -266,6 +268,7 @@ export function App() {
               members={groupMembers}
               currentUserId={user.id}
               onOpenNewExpenseModal={() => setIsNewExpenseModalOpen(true)}
+              onEditExpense={(expense) => setEditingExpense(expense)}
               onDeleteExpense={handleDeleteExpense}
             />
 
@@ -312,6 +315,16 @@ export function App() {
             members={groupMembers}
             currentUserId={user.id}
             onExpenseCreated={fetchGroupData}
+          />
+
+          <EditExpenseModal
+            isOpen={!!editingExpense}
+            onClose={() => setEditingExpense(null)}
+            expense={editingExpense}
+            members={groupMembers}
+            currentUserId={user.id}
+            onExpenseUpdated={fetchGroupData}
+            onExpenseDeleted={fetchGroupData}
           />
 
           <SettlementModal

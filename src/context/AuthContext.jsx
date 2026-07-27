@@ -184,14 +184,19 @@ export const AuthProvider = ({ children }) => {
     if (!user) throw new Error('Usuario no autenticado')
     const cleanCode = inviteCode.trim().toUpperCase()
 
-    // Find group by invite code
+    // Find group by invite code using maybeSingle to avoid 406 errors
     const { data: groupData, error: findErr } = await supabase
       .from('groups')
       .select('*')
       .eq('invite_code', cleanCode)
-      .single()
+      .maybeSingle()
 
-    if (findErr || !groupData) {
+    if (findErr) {
+      console.error('Error looking up group:', findErr)
+      throw new Error('Error al buscar el grupo')
+    }
+
+    if (!groupData) {
       throw new Error('Código de invitación no encontrado o inválido')
     }
 

@@ -75,12 +75,13 @@ export const calculateMonthlySummary = ({
 
   const pendingInstallmentAmount = totalInstallmentAmount - paidInstallmentAmount
 
-  // 2. Direct Expenses calculation for current month
+  // Direct Expenses calculation for current month
   const monthlyExpenses = expenses.filter(exp => 
     isSameMonthAndYear(exp.date || exp.created_at, targetMonth)
   )
 
-  const memberCount = Math.max(members.length, 1)
+  // Default to 2 members minimum for 50/50 couple calculation if partner has not joined yet
+  const memberCount = Math.max(members.length, 2)
 
   // Total direct expenses in group this month
   const totalDirectExpenses = monthlyExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
@@ -90,7 +91,7 @@ export const calculateMonthlySummary = ({
     .filter(exp => exp.paid_by === currentUserId)
     .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
 
-  // Fair share of direct expenses per member (50% if 2 members)
+  // Fair share of direct expenses per member (50% for couple)
   const userFairShareExpenses = totalDirectExpenses / memberCount
 
   // Net balance from direct expenses (positive = user spent more than share, partner owes user; negative = user owes partner)

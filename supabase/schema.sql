@@ -177,11 +177,11 @@ CREATE POLICY "Users can update their own profile"
     TO authenticated 
     USING (id = auth.uid());
 
--- 2. Groups: Members can view their groups. Any user can create a group.
-CREATE POLICY "Users can view groups they belong to" 
+-- 2. Groups: Users can view/lookup groups. Any user can create a group.
+CREATE POLICY "Users can view groups" 
     ON public.groups FOR SELECT 
     TO authenticated 
-    USING (public.is_group_member(id) OR created_by = auth.uid());
+    USING (true);
 
 CREATE POLICY "Users can create groups" 
     ON public.groups FOR INSERT 
