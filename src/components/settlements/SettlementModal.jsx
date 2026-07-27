@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Modal } from '../common/Modal'
 import { supabase } from '../../lib/supabase'
 import { HandCoins, DollarSign, Calendar, User, FileText } from 'lucide-react'
@@ -12,27 +12,51 @@ export const SettlementModal = ({
   suggestedAmount = 0,
   onSettlementCreated
 }) => {
-  const otherMembers = members.filter(m => m.id !== currentUserId)
-  const defaultReceiverId = otherMembers[0]?.id || ''
-
-  const [payerId, setPayerId] = useState(currentUserId || '')
-  const [receiverId, setReceiverId] = useState(defaultReceiverId)
-  const [amount, setAmount] = useState(suggestedAmount > 0 ? String(suggestedAmount) : '')
+  const [payerId, setPayerId] = useState('')
+  const [receiverId, setReceiverId] = useState('')
+  const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('Transferencia de saldo')
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Sync state when modal opens or members load
+  useEffect(() => {
+    if (isOpen && members.length > 0) {
+      const partner = members.find(m => m.id !== currentUserId) || members[0]
+      const self = members.find(m => m.id === currentUserId) || members[0]
+
+      // Default: Partner transfers (payer) to Current User (receiver)
+      setPayerId(partner.id)
+      setReceiverId(self.id)
+
+      if (suggestedAmount > 0) {
+        setAmount(String(suggestedAmount))
+      } else if (!amount) {
+        setAmount('')
+      }
+      setError('')
+    }
+  }, [isOpen, members, currentUserId, suggestedAmount])
+
+  if (!isOpen) return null
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const numAmount = Number(amount)
+
+    if (!payerId || !receiverId) {
+      setError('Por favor selecciona el pagador y el receptor de la transferencia.')
+      return
+    }
+
     if (numAmount <= 0) {
       setError('Por favor ingresa un monto válido a liquidar.')
       return
     }
 
     if (payerId === receiverId) {
-      setError('El pagador y receptor deben ser usuarios distintos.')
+      setError('El pagador y el receptor deben ser personas distintas.')
       return
     }
 
@@ -86,6 +110,7 @@ export const SettlementModal = ({
                 onChange={(e) => setPayerId(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm font-semibold bg-slate-900"
               >
+                <option value="" disabled>Seleccionar pagador...</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.full_name} {m.id === currentUserId ? '(Tú)' : ''}
@@ -106,6 +131,7 @@ export const SettlementModal = ({
                 onChange={(e) => setReceiverId(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm font-semibold bg-slate-900"
               >
+                <option value="" disabled>Seleccionar receptor...</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.full_name} {m.id === currentUserId ? '(Tú)' : ''}
@@ -130,7 +156,7 @@ export const SettlementModal = ({
                 required
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="25000"
+                placeholder="55000"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl glass-input text-sm font-bold text-purple-400"
               />
             </div>
