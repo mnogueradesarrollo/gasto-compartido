@@ -27,7 +27,19 @@ export const AuthForm = () => {
       }
     } catch (err) {
       console.error(err)
-      setError(err.message || 'Error de autenticación')
+      let msg = err.message || 'Error de autenticación'
+      if (msg.includes('email rate limit exceeded')) {
+        msg = 'Se ha alcanzado el límite de correos de Supabase. Te recomendamos desactivar "Confirm email" en Supabase Dashboard (Authentication > Providers > Email) o intentar Iniciar Sesión.'
+      } else if (msg.includes('For security purposes')) {
+        const match = msg.match(/\d+/)
+        const seconds = match ? match[0] : 'unos'
+        msg = `Por seguridad, debes esperar ${seconds} segundos antes de intentar otro registro.`
+      } else if (msg.includes('Invalid login credentials')) {
+        msg = 'Correo electrónico o contraseña incorrectos.'
+      } else if (msg.includes('User already registered')) {
+        msg = 'Este correo electrónico ya está registrado. Intenta iniciar sesión.'
+      }
+      setError(msg)
     } finally {
       setLoading(false)
     }
